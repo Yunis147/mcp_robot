@@ -1,0 +1,19 @@
+# LLM Providers
+anthropic
+google-genai
+openai
+# MCP
+mcp[cli]
+# Testing
+pylint
+numpy
+
+# Robot control dependencies
+pynput>=1.7.6
+git+https://github.com/huggingface/lerobot.git#egg=lerobot
+feetech-servo-sdk>=1.0.0
+opencv-python>=4.9.0
+Pillow>=10.0.0
+
+# MCP and LLM dependencies
+python-dotenv
