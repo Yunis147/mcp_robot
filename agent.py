@@ -265,6 +265,8 @@ class AIAgent:
                         response_text = await self.process_with_llm(user_input)
                         if not response_text or len(response_text.strip()) == 0:
                             print(f"\n✅ Task completed")
+                        else:
+                            print(f"\n🤖 {response_text}")
 
         except Exception as e:
             print(f"❌ Connection failed: {str(e)}")

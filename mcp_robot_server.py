@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__) # Use a named logger for MCP server specifi
 
 mcp = FastMCP(
     name="SO-ARM100 robot controller",
+    host="0.0.0.0",
     port = 3001 # can use any other port
 )
 
@@ -237,7 +238,7 @@ atexit.register(_cleanup)
 if __name__ == "__main__":
     logger.info("Starting MCP Robot Server...")
     try:
-        mcp.run()
+        mcp.run(transport="sse")
     except SystemExit as e:
         logger.error(f"MCP Server failed to start: {e}")
     except Exception as e_main:
