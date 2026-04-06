@@ -80,10 +80,10 @@ class RobotConfig:
 
     ROVER_CONSTANTS: Dict[str, Any] = field(
         default_factory=lambda: {
-            "DRIVE_SPEED": 0.3,          # velocity sent to lekiwi (tune after testing)
-            "ROTATE_SPEED": 0.2,         # rotation velocity (tune after testing)
+            "DRIVE_SPEED": 0.15,          # velocity sent to lekiwi (tune after testing)
+            "ROTATE_SPEED": 45.0,         # rotation velocity (tune after testing)
             "MM_PER_SECOND": 150.0,      # calibrate tomorrow!
-            "DEG_PER_SECOND": 45.0,      # calibrate tomorrow!
+            "DEG_PER_SECOND": 41.0,      # calibrate tomorrow!
         }
     )
 
