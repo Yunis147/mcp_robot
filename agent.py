@@ -201,27 +201,49 @@ class AIAgent:
                 
                 tool_results_with_images, image_parts = self.llm_provider.format_tool_results_for_conversation(tool_calls, tool_outputs)
 
-                # Only keep images from the last tool call (most recent images)
+                # Only keep images from the last tool call
                 if image_parts and len(tool_outputs) > 1:
-                    # Get images only from the last tool output
                     last_tool_images = []
-                    if tool_outputs:
-                        has_images = False
-                        for part in tool_outputs[-1]:  # Last tool output
-                            if part.get('type') == 'image' and 'source' in part:
-                                if not has_images:
-                                    last_tool_images = []
-                                    has_images = True
-                                last_tool_images.append(part)
+                    for part in tool_outputs[-1]:
+                        if part.get('type') == 'image' and 'source' in part:
+                            last_tool_images.append(part)
                     image_parts = last_tool_images
 
                 if image_parts and self.image_viewer:
                     self.image_viewer.update(image_parts)
 
-                # If we got response with images: remove ALL images from history and add new ones at the end
+                # Strip all old images from history before adding new ones
                 if image_parts:
                     self.conversation_history = self._filter_images_from_conversation(self.conversation_history)
 
+                # For Ollama — append tool results as plain text only, images separately
+                # This prevents infinite loop caused by malformed tool result messages
+                for i, (tool_call, tool_result) in enumerate(zip(tool_calls, tool_results_with_images)):
+                    # extract just the text content
+                    text_content = ""
+                    if isinstance(tool_result.get("content"), list):
+                        text_content = " ".join(
+                            p.get("text", "") for p in tool_result["content"]
+                            if isinstance(p, dict) and p.get("type") == "text"
+                        )
+                    elif isinstance(tool_result.get("content"), str):
+                        text_content = tool_result["content"]
+
+                    self.conversation_history.append({
+                        "role": "tool",
+                        "content": text_content,
+                        "name": tool_call["name"]
+                    })
+
+                # Add images as a separate user message so Ollama can see them
+                if image_parts:
+                    image_message_content = [{"type": "text", "text": "Here are the current camera images from the robot:"}]
+                    for img in image_parts:
+                        image_message_content.append(img)
+                    self.conversation_history.append({
+                        "role": "user",
+                        "content": image_message_content
+                    })
                 self.conversation_history.append({"role": "tool", "content": tool_results_with_images})
 
             except Exception as e:

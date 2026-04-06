@@ -216,6 +216,57 @@ def control_gripper(gripper_openness_pct):
         return {"status": "error", "message": f"Invalid gripper openness value: {str(e)}"}
 
 
+@mcp.tool(
+    description="""
+    Move the robot's rover base (wheels).
+    Use this to move the whole robot to a new position.
+    Args:
+        move_forward_mm (float, optional): Distance to move forward (positive) or backward (negative) in mm
+        move_sideways_mm (float, optional): Distance to move left (positive) or right (negative) in mm
+        rotate_deg (float, optional): Angle to rotate counterclockwise (positive) or clockwise (negative) in degrees
+    Expected input format:
+    {
+        "move_forward_mm": "100",    # move 10cm forward
+        "move_sideways_mm": "-50",   # move 5cm right
+        "rotate_deg": "90"           # rotate 90 degrees counterclockwise
+    }
+    Returns:
+        list: List containing:
+            - JSON with status and current robot state
+            - Camera images after movement
+    """
+)
+def move_rover(
+    move_forward_mm=None,
+    move_sideways_mm=None,
+    rotate_deg=None
+):
+    robot = get_robot()
+    
+    logger.info(f"MCP Tool: move_rover called: forward={move_forward_mm}, sideways={move_sideways_mm}, rotate={rotate_deg}")
+    
+    move_params = {
+        "move_forward_mm": float(move_forward_mm) if move_forward_mm is not None else None,
+        "move_sideways_mm": float(move_sideways_mm) if move_sideways_mm is not None else None,
+        "rotate_deg": float(rotate_deg) if rotate_deg is not None else None,
+    }
+    
+    actual_params = {k: v for k, v in move_params.items() if v is not None}
+    
+    if not actual_params:
+        current_state = robot.get_current_robot_state()
+        result_json = current_state.to_json()
+        result_json["message"] = "No movement parameters provided to move_rover tool."
+        return get_state_with_images(result_json, is_movement=False)
+    
+    move_result = robot.move_rover(**actual_params)
+    result_json = move_result.to_json()
+    
+    logger.info(f"MCP: move_rover outcome: {result_json.get('status', 'success')}")
+    
+    return get_state_with_images(result_json, is_movement=True)
+
+
 # -----------------------------------------------------------------------------
 # Graceful shutdown
 # -----------------------------------------------------------------------------

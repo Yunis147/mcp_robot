@@ -78,6 +78,15 @@ class RobotConfig:
         }
     )
 
+    ROVER_CONSTANTS: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "DRIVE_SPEED": 0.3,          # velocity sent to lekiwi (tune after testing)
+            "ROTATE_SPEED": 0.2,         # rotation velocity (tune after testing)
+            "MM_PER_SECOND": 150.0,      # calibrate tomorrow!
+            "DEG_PER_SECOND": 45.0,      # calibrate tomorrow!
+        }
+    )
+
     # Robot description for AI/LLM context
     robot_description: str = ("""
 Follow these instructions precisely. Never deviate.
@@ -101,7 +110,20 @@ Instructions:
 - Move above object with gripper tilted up (10–15°) to avoid collisions. Stay >25 cm above ground when moving or rotating
 - Never move with gripper near the ground
 - Drop and restart plan if unsure or failed
+
+                              
+Rover movement:
+- You can move the whole robot using move_rover tool
+- move_forward_mm: positive=forward, negative=backward
+- move_sideways_mm: positive=left, negative=right
+- rotate_deg: positive=counterclockwise, negative=clockwise
+- Use rover movement to position robot near objects before using arm
+- don't use rover movement with arm extended to avoid collisions
+- drop and restart plan if unsure about rover movement or if arm is extended
+- After moving the rover, re-evaluate the situation with the cameras before proceeding with arm movements
+- Always prioritize safety and collision avoidance when using rover movement
 """
+
     )
 
     # Kinematic parameters for different robot types

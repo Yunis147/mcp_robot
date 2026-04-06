@@ -436,7 +436,97 @@ class RobotController:
             target_positions["shoulder_pan"] -= rotate_robot_left_angle
         
         return self.set_joints_absolute(target_positions, use_interpolation)
+    
+    def move_rover(
+        self,
+        move_forward_mm: Optional[float] = None,
+        move_sideways_mm: Optional[float] = None,
+        rotate_deg: Optional[float] = None,
+    ) -> MoveResult:
+        """Move the rover base forward/backward, sideways, or rotate."""
+        
+        if self.read_only:
+            return MoveResult(False, "Cannot move rover in read-only mode", robot_state=self._get_full_state())
+        
+        if not self.robot:
+            return MoveResult(False, "Robot not connected", robot_state=self._get_full_state())
+        
+        # get rover constants from config
+        rover_config = robot_config.ROVER_CONSTANTS
+        drive_speed = rover_config["DRIVE_SPEED"]
+        rotate_speed = rover_config["ROTATE_SPEED"]
+        mm_per_second = rover_config["MM_PER_SECOND"]
+        deg_per_second = rover_config["DEG_PER_SECOND"]
+        
+        # calculate velocities and durations
+        x_vel = 0.0
+        y_vel = 0.0
+        theta_vel = 0.0
+        duration = 0.0
+        
+        if move_forward_mm is not None and move_forward_mm != 0:
+            x_vel = drive_speed if move_forward_mm > 0 else -drive_speed
+            duration = max(duration, abs(move_forward_mm) / mm_per_second)
+        
+        if move_sideways_mm is not None and move_sideways_mm != 0:
+            y_vel = drive_speed if move_sideways_mm > 0 else -drive_speed
+            duration = max(duration, abs(move_sideways_mm) / mm_per_second)
+        
+        if rotate_deg is not None and rotate_deg != 0:
+            theta_vel = rotate_speed if rotate_deg > 0 else -rotate_speed
+            duration = max(duration, abs(rotate_deg) / deg_per_second)
+        
+        if duration == 0.0:
+            return MoveResult(False, "No movement parameters provided", robot_state=self._get_full_state())
+        
+        logger.info(f"Moving rover: forward={move_forward_mm}mm, sideways={move_sideways_mm}mm, rotate={rotate_deg}deg")
+        logger.info(f"Velocities: x={x_vel}, y={y_vel}, theta={theta_vel}, duration={duration:.2f}s")
+        
+        try:
+            # build action — keep arm in current position, move wheels
+            move_action = self._build_rover_action(x_vel, y_vel, theta_vel)
+            self.robot.send_action(move_action)
+            
+            # wait for movement to complete
+            time.sleep(duration)
+            
+            # stop the rover
+            stop_action = self._build_rover_action(0.0, 0.0, 0.0)
+            self.robot.send_action(stop_action)
+            
+            logger.info("Rover movement complete")
+            
+        except Exception as e:
+            logger.error(f"Rover move failed: {e}", exc_info=True)
+            # try to stop even if error
+            try:
+                stop_action = self._build_rover_action(0.0, 0.0, 0.0)
+                self.robot.send_action(stop_action)
+            except:
+                pass
+            return MoveResult(False, f"Rover move failed: {e}", robot_state=self._get_full_state())
+        
+        self._refresh_state()
+        return MoveResult(True, 
+            f"Rover moved: forward={move_forward_mm}mm, sideways={move_sideways_mm}mm, rotate={rotate_deg}deg",
+            robot_state=self._get_full_state()
+        )
 
+    def _build_rover_action(self, x_vel: float, y_vel: float, theta_vel: float) -> Dict[str, float]:
+        """Build action dict for rover movement, keeping arm at current position."""
+        action = {}
+        
+        # keep arm exactly where it is
+        for name in self.joint_names:
+            norm_val = self.positions_norm[name]
+            action[f"arm_{name}.pos"] = norm_val
+        
+        # set wheel velocities
+        action["x.vel"] = x_vel
+        action["y.vel"] = y_vel
+        action["theta.vel"] = theta_vel
+        
+        return action
     def apply_named_preset(self, preset_key: str) -> MoveResult:
         """Apply a named preset position."""
         if self.read_only:
