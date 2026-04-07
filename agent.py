@@ -247,7 +247,9 @@ class AIAgent:
                 self.conversation_history.append({"role": "tool", "content": tool_results_with_images})
 
             except Exception as e:
+                import traceback
                 print(f"❌ Error in agent loop: {str(e)}")
+                print(f"❌ Full traceback: {traceback.format_exc()}")
                 return f"An error occurred: {str(e)}"
 
         return f"Completed {max_iterations} iterations without a final answer."
