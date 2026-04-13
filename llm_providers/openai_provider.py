@@ -13,7 +13,7 @@ from .base_provider import LLMProvider, LLMResponse
 class OpenAIProvider(LLMProvider):
     """LLM Provider for OpenAI models."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-5.4-nano"):
         super().__init__(api_key, model)
         
         if not self.api_key:
@@ -137,10 +137,15 @@ class OpenAIProvider(LLMProvider):
                                 # Skip these as they're usually image descriptions
                                 pass
                 else:
-                    # Fallback for simple tool content
+                    # Fallback: look back at last assistant message for the real tool_call_id
+                    last_call_id = None
+                    for msg in reversed(formatted_messages):
+                        if msg.get("role") == "assistant" and msg.get("tool_calls"):
+                            last_call_id = msg["tool_calls"][-1]["id"]
+                            break
                     tool_messages.append({
                         "role": "tool",
-                        "tool_call_id": "unknown",
+                        "tool_call_id": last_call_id or "",
                         "content": str(content)
                     })
                 

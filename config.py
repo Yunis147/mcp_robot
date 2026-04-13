@@ -37,7 +37,7 @@ class RobotConfig:
             "remote_ip": DEFAULT_REMOTE_IP,
             "cameras": {
                 "front": OpenCVCameraConfig(
-                    index_or_path=2,
+                    index_or_path=4,
                     fps=DEFAULT_CAMERA_FPS,
                     width=DEFAULT_CAMERA_WIDTH,
                     height=DEFAULT_CAMERA_HEIGHT,
