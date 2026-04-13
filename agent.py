@@ -260,6 +260,7 @@ class AIAgent:
                     self.conversation_history.append({
                         "role": "tool",
                         "content": text_content,
+                        "tool_call_id": tool_call["id"],
                         "name": tool_call["name"]
                     })
                 # ^^^ DO NOT add another append after this loop ^^^
