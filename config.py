@@ -7,7 +7,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, Tuple, Any, Final
 from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
-
+from lerobot.cameras.realsense.configuration_realsense import RealSenseCameraConfig
 # Module-level constants
 DEFAULT_ROBOT_TYPE: Final[str] = "lekiwi" # "so100", "so101", "lekiwi"
 DEFAULT_SERIAL_PORT: Final[str] = "/dev/tty.usbmodem58FD0168731" # only for SO ARM
@@ -17,7 +17,7 @@ DEFAULT_REMOTE_IP: Final[str] = "127.0.0.1" # only for LeKiwi
 # Can also be different for different cameras, set it in lerobot_config
 DEFAULT_CAMERA_FPS: Final[int] = 30
 DEFAULT_CAMERA_WIDTH: Final[int] = 640
-DEFAULT_CAMERA_HEIGHT: Final[int] = 360
+DEFAULT_CAMERA_HEIGHT: Final[int] = 480
 
 @dataclass
 class RobotConfig:
@@ -36,14 +36,20 @@ class RobotConfig:
             "port": DEFAULT_SERIAL_PORT,
             "remote_ip": DEFAULT_REMOTE_IP,
             "cameras": {
-                "front": OpenCVCameraConfig(
-                    index_or_path=4,
-                    fps=DEFAULT_CAMERA_FPS,
-                    width=DEFAULT_CAMERA_WIDTH,
-                    height=DEFAULT_CAMERA_HEIGHT,
+                "front": RealSenseCameraConfig(
+                    serial_number_or_name="336222071373",
+                    fps=60,
+                    width=960,
+                    height=540,
                 ),
                 "wrist": OpenCVCameraConfig(
-                    index_or_path=6,
+                    index_or_path=8,
+                    fps=DEFAULT_CAMERA_FPS,
+                    width=800,
+                    height=DEFAULT_CAMERA_HEIGHT,
+                ),
+                "top": OpenCVCameraConfig(
+                    index_or_path=0,
                     fps=DEFAULT_CAMERA_FPS,
                     width=DEFAULT_CAMERA_WIDTH,
                     height=DEFAULT_CAMERA_HEIGHT,
@@ -65,7 +71,7 @@ class RobotConfig:
             "elbow_flex":    (96.5, -92.7, 0, 180.0),
             "wrist_flex":    (-90.0, 90.0, -90.0, 90.0),
             "wrist_roll":    (100, -100, -90, 90),
-            "gripper":       (31.0, 100.0, 0.0, 100.0),
+            "gripper":       (10.0, 100.0, 0.0, 100.0),
         }
     )
 
@@ -268,10 +274,10 @@ class RobotConfig:
     Use these to estimate distances. E.g., if the object is near but not in the gripper, you can safely move 5–10 cm forward but do not collide with obstacles and ground.
 
 
-    Robot has 2 cameras:
+    Robot has 3 cameras:
     - front: at the base, looks forward
     - wrist: close view of gripper
-
+    - top: looks down from above
 
     Instructions:
     - Move slowly and iteratively 
@@ -284,6 +290,10 @@ class RobotConfig:
     - Move above object with gripper tilted up (10–15°) to avoid collisions. Stay >25 cm above ground when moving or rotating
     - Never move with gripper near the ground
     - Drop and restart plan if unsure or failed
+    - when the user says "rotate" or "turn", use rotate_deg in move_rover, do not use shoulder_pan to rotate the robot
+    - when the user says "rotate arm" or "pan arm", use shoulder_pan to rotate the arm, do not use rotate_deg in move_rover
+    - when the user says pick the cube , do not move rover forward and then pick, instead, directly pick the cube with arm movement,
+     do not use rover movement to get closer to the cube, use arm movement to pick the cube directly, you can move the arm forward and down to reach the cube,
 
                                 
     Rover movement:
@@ -296,6 +306,7 @@ class RobotConfig:
     - drop and restart plan if unsure about rover movement or if arm is extended
     - After moving the rover, re-evaluate the situation with the cameras before proceeding with arm movements
     - Always prioritize safety and collision avoidance when using rover movement
+    - When picking up objects, use arm movements to reach and grasp the object directly, rather than moving the rover closer. This allows for more precise control and reduces the risk of collisions.
     """ )
 
 
