@@ -6,6 +6,7 @@ Used by all other scripts.
 import logging
 import json
 from typing import Dict, List, Optional, Any
+import cv2
 import numpy as np
 from dataclasses import dataclass, field
 import time
@@ -553,9 +554,16 @@ class RobotController:
                 
                 if camera_name in camera_names and isinstance(value, np.ndarray) and value.ndim == 3:
                     camera_images[camera_name] = value
-                elif key in camera_names and isinstance(value, np.ndarray) and value.ndim == 3:
+                elif camera_name.replace("_depth", "") in camera_names and value.ndim == 2:
+                    depth_colored = cv2.applyColorMap(
+                        cv2.convertScaleAbs(value, alpha=0.03),
+                        cv2.COLORMAP_JET
+                    )
+                    camera_images[camera_name] = depth_colored
+                
+                elif key in camera_names and value.ndim == 3:
                     camera_images[key] = value
-            
+                        
             return camera_images
         except Exception as e:
             logger.error(f"Error getting camera images: {e}", exc_info=True)
