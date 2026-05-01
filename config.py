@@ -274,13 +274,15 @@ class RobotConfig:
     Use these to estimate distances. E.g., if the object is near but not in the gripper, you can safely move 5–10 cm forward but do not collide with obstacles and ground.
 
 
-    Robot has 3 cameras:
-    - front: at the base, looks forward
+    Robot has 4 cameras:
+    - front_rgb: at the base, looks forward , takes color images
+    - front_depth: at the base, looks forward, takes depth images
     - wrist: close view of gripper
     - top: looks down from above
 
     Instructions:
     - Move slowly and iteratively 
+    - use depth images to estimate distances and avoid collisions
     - Close gripper completely to grab objects
     - Check results after each move before proceeding
     - When the object inside your gripper it will not be visible on top and front cameras and will cover the whole view for the wrist one

@@ -110,12 +110,17 @@ class OpenAIProvider(LLMProvider):
                 # Handle tool results - separate text and images
                 tool_messages = []
                 image_parts = []
+                seen_tool_ids = set()
                 
                 if isinstance(content, list):
                     for item in content:
                         if isinstance(item, dict):
                             # Handle tool result items (with tool_call_id)
                             if item.get("tool_call_id"):
+                                call_id = item["tool_call_id"]
+                                if call_id in seen_tool_ids:  # ADD THIS
+                                    continue                   # ADD THIS
+                                seen_tool_ids.add(call_id)
                                 tool_messages.append({
                                     "role": "tool",
                                     "tool_call_id": item["tool_call_id"],
